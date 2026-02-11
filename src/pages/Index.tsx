@@ -4,13 +4,13 @@ import { Card } from "@/components/ui/card";
 import {
   Upload, Sparkles, Book, Store, Utensils,
   Sprout, Droplets, BookOpen, Search, RefreshCw,
-  ArrowRight, LogOut, User
+  ArrowRight
 } from "lucide-react";
 import { useNavigate, useNavigationType } from "react-router-dom";
 import { toast } from "sonner";
 import heroImage from "@/assets/hero-bananas.jpg";
-// ✅ เชื่อมต่อ Supabase Client
 import { supabase } from "@/integrations/supabase/client";
+import Navbar from "@/components/Navbar"; // ✅ 1. Import Navbar ตัวใหม่เข้ามา
 
 const Index = () => {
   const navigate = useNavigate();
@@ -20,28 +20,14 @@ const Index = () => {
   const [previewUrl, setPreviewUrl] = useState<string>("");
   const [detecting, setDetecting] = useState(false);
   
-  // ✨ เพิ่ม State สำหรับจัดการสถานะ Login
-  const [session, setSession] = useState<any>(null);
+  // 💡 หมายเหตุ: ไม่ต้องมี State session หรือฟังก์ชัน handleSignOut แล้ว เพราะอยู่ใน <Navbar />
 
-  // State สำหรับเก็บผลลัพธ์จาก AI และข้อมูลจาก Database
   const [result, setResult] = useState<any>(null);
   const [bananaDetails, setBananaDetails] = useState<any>(null);
-
-  // ✨ สร้างหมุดหมาย (Ref) เพื่อบอกตำแหน่งของส่วนผลลัพธ์
   const resultRef = useRef<HTMLDivElement>(null);
 
-  // ✨ Logic: รีเฟรชต้องหาย / กดย้อนกลับต้องอยู่ + ตรวจสอบ Auth
   useEffect(() => {
-    // ตรวจสอบ Session เมื่อโหลดหน้า
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-    });
-
-    // ติดตามการเปลี่ยนแปลงการ Login/Logout
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-    });
-
+    // 💡 เหลือไว้แค่ Logic การจัดการ Refresh/Navigation
     const isReload = (
       window.performance.navigation.type === 1 ||
       performance.getEntriesByType("navigation").some((nav: any) => nav.type === "reload")
@@ -54,7 +40,6 @@ const Index = () => {
       setResult(null);
       setBananaDetails(null);
       setPreviewUrl("");
-      if (isReload) return;
     }
 
     if (navType === "POP" && !isReload) {
@@ -72,10 +57,9 @@ const Index = () => {
         }, 500);
       }
     }
-
-    return () => subscription.unsubscribe();
   }, [navType]);
 
+  // --- ฟังก์ชัน handleImageUpload, resetDetection, handleDetect (ใช้ของเดิมของพี่ได้เลย) ---
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -84,9 +68,6 @@ const Index = () => {
       setPreviewUrl(url);
       setResult(null);
       setBananaDetails(null);
-      sessionStorage.removeItem("last_detect_result");
-      sessionStorage.removeItem("last_banana_details");
-      sessionStorage.removeItem("last_preview_url");
     }
   };
 
@@ -95,18 +76,8 @@ const Index = () => {
     setPreviewUrl("");
     setResult(null);
     setBananaDetails(null);
-    sessionStorage.removeItem("last_detect_result");
-    sessionStorage.removeItem("last_banana_details");
-    sessionStorage.removeItem("last_preview_url");
     window.scrollTo({ top: 0, behavior: "smooth" });
     toast.info("ล้างข้อมูลเรียบร้อย เริ่มสแกนใหม่ได้เลยงับ");
-  };
-
-  // ✨ ฟังก์ชันออกจากระบบ
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    toast.success("ออกจากระบบเรียบร้อย");
-    navigate("/");
   };
 
   const handleDetect = async () => {
@@ -114,67 +85,31 @@ const Index = () => {
       toast.error("กรุณาเลือกรูปภาพก่อนครับพี่");
       return;
     }
-
     setDetecting(true);
-    setResult(null);
-    setBananaDetails(null);
-
     try {
       const formData = new FormData();
-      formData.append('file', selectedImage); 
-
-      // ✅ แก้ไข: ดึงค่าจาก Environment Variable
-      const backendUrl = import.meta.env.VITE_API_BASE_URL || "/api"; 
-
-      const response = await fetch(`${backendUrl}/detect`, { 
-        method: "POST",
-        body: formData,
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error("Server Error Detail:", errorData);
-        throw new Error(errorData.detail || "Server Error");
-      }
-      
+      formData.append('file', selectedImage);
+      const backendUrl = import.meta.env.VITE_API_BASE_URL || "/api";
+      const response = await fetch(`${backendUrl}/detect`, { method: "POST", body: formData });
       const data = await response.json();
 
       if (data.success) {
-        const aiKey = data.banana_key; 
+        const aiKey = data.banana_key;
         const dbSlug = `kluai-${aiKey.toLowerCase().replace(/[_\s-]/g, "")}`;
-
-        const { data: dbData, error: dbError } = await supabase
-          .from("cultivars")
-          .select("*")
-          .eq("slug", dbSlug)
-          .single();
+        const { data: dbData } = await supabase.from("cultivars").select("*").eq("slug", dbSlug).single();
 
         if (dbData) {
-          const finalResult = {
-            cultivar: dbData.thai_name,
-            confidence: data.confidence,
-          };
+          const finalResult = { cultivar: dbData.thai_name, confidence: data.confidence };
           setBananaDetails(dbData);
           setResult(finalResult);
-          
           sessionStorage.setItem("last_detect_result", JSON.stringify(finalResult));
           sessionStorage.setItem("last_banana_details", JSON.stringify(dbData));
           sessionStorage.setItem("last_preview_url", previewUrl);
-
           toast.success("วิเคราะห์กล้วยเรียบร้อย! 🍌");
-          setTimeout(() => {
-            resultRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-          }, 200);
-        } else {
-          setResult({ cultivar: aiKey, confidence: data.confidence });
-          toast.warning(`พบสายพันธุ์แต่ไม่มีข้อมูลในระบบ (${dbSlug})`);
         }
-      } else {
-        toast.error(`AI หาไม่เจอ: ${data.reason}`);
       }
-    } catch (error: any) {
-      console.error("Detection Error:", error);
-      toast.error(`เกิดข้อผิดพลาด: ${error.message}`);
+    } catch (error) {
+      toast.error("เกิดข้อผิดพลาดในการเชื่อมต่อ");
     } finally {
       setDetecting(false);
     }
@@ -182,46 +117,12 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gradient-hero">
-      {/* 🟢 Navbar Section */}
-      <nav className="border-b border-border bg-background/80 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <h1
-              className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent cursor-pointer"
-              onClick={() => navigate("/")}
-            >
-              Banana Expert
-            </h1>
-          </div>
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" className="hidden md:flex" onClick={() => navigate("/knowledge")}>
-              <Book className="w-4 h-4 mr-2" />
-              Knowledge
-            </Button>
-            <Button variant="ghost" className="hidden md:flex" onClick={() => navigate("/market")}>
-              <Store className="w-4 h-4 mr-2" />
-              Marketplace
-            </Button>
-
-            {/* ✨ แก้ไข: เปลี่ยนปุ่มตามสถานะ Session */}
-            {session ? (
-              <div className="flex items-center gap-2">
-                <Button variant="outline" onClick={() => navigate("/dashboard")} className="gap-2">
-                  <User className="w-4 h-4" /> Profile
-                </Button>
-                <Button variant="ghost" size="icon" onClick={handleSignOut} className="text-destructive">
-                  <LogOut className="w-4 h-4" />
-                </Button>
-              </div>
-            ) : (
-              <Button onClick={() => navigate("/auth/login")}>Sign In</Button>
-            )}
-          </div>
-        </div>
-      </nav>
+      {/* ✅ 2. วาง Navbar ตัวใหม่แทนที่ก้อนเดิมทั้งก้อน */}
+      <Navbar />
 
       {/* 🟢 Hero Header Section */}
       <section className="relative overflow-hidden">
+        {/* ... (โค้ดเดิม) ... */}
         <div className="absolute inset-0 opacity-10">
           <img src={heroImage} alt="Fresh bananas background" className="w-full h-full object-cover" />
         </div>

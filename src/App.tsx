@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 // Import Pages
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
+import ResetPassword from "./pages/ResetPassword"; // ✨ เพิ่ม Import หน้า Reset Password
 import Knowledge from "./pages/Knowledge";
 import CultivarDetail from "./pages/CultivarDetail";
 import Market from "./pages/Market";
@@ -20,7 +21,7 @@ import FarmReviews from "@/pages/FarmReviews";
 // Farm Pages
 import FarmDashboard from "./pages/farm/FarmDashboard";
 import AddProduct from "./pages/farm/AddProduct";
-import EditProduct from "./pages/farm/EditProduct"; // ✨ เพิ่ม Import หน้าแก้ไขสินค้า
+import EditProduct from "./pages/farm/EditProduct"; 
 import ManageProducts from "./pages/farm/ManageProducts";
 import FarmOrders from "./pages/farm/FarmOrders";
 import OrderDetail from "./pages/farm/OrderDetail";
@@ -38,32 +39,33 @@ const App = () => (
           {/* 🏠 Main Route */}
           <Route path="/" element={<Index />} />
           <Route path="/auth/login" element={<Auth />} />
+          <Route path="/reset-password" element={<ResetPassword />} /> {/* ✨ เพิ่ม Route สำหรับตั้งรหัสผ่านใหม่ */}
           
-          {/* 📖 Knowledge & Cultivar (เชื่อมจากหน้า Index และ Knowledge) */}
+          {/* 📖 Knowledge & Cultivar */}
           <Route path="/knowledge" element={<Knowledge />} />
           <Route path="/knowledge/:slug" element={<CultivarDetail />} />
-          <Route path="/cultivar/:slug" element={<CultivarDetail />} /> {/* ✨ ทางด่วนเชื่อมจากปุ่มในหน้า Index ใหม่ */}
+          <Route path="/cultivar/:slug" element={<CultivarDetail />} /> 
           
-          {/* 🛒 Market & Products (เชื่อมจากปุ่ม "แนะนำฟาร์ม" ในหน้า Index) */}
+          {/* 🛒 Market & Products */}
           <Route path="/market" element={<Market />} />
           <Route path="/market/product/:id" element={<ProductDetail />} />
           
           {/* 👤 User & Dashboard */}
           <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/dashboard/orders" element={<UserOrders />} /> {/* ✨ กลับมาแล้ว! */}
+          <Route path="/dashboard/orders" element={<UserOrders />} /> 
           <Route path="/profile" element={<UpdateProfile />} />
           
-          {/* 🚜 Farm Management (ระบบหลังบ้านฟาร์ม) */}
+          {/* 🚜 Farm Management */}
           <Route path="/farm/dashboard" element={<FarmDashboard />} />
           <Route path="/farm/products" element={<ManageProducts />} />
           <Route path="/farm/products/add" element={<AddProduct />} />
-          <Route path="/farm/products/edit/:id" element={<EditProduct />} /> {/* ✨ เพิ่ม Route สำหรับแก้ไขสินค้า */}
+          <Route path="/farm/products/edit/:id" element={<EditProduct />} /> 
           <Route path="/farm/orders" element={<FarmOrders />} />
           <Route path="/farm/orders/:id" element={<OrderDetail />} />
 
-          {/* 🏠 Farm Public Profile (เชื่อมจากชื่อฟาร์มในหน้า Market) */}
-          <Route path="/farm/:farmId" element={<FarmPublic />} /> {/* ✨ กลับมาแล้ว! */}
-          <Route path="/farm/reviews/:farmId" element={<FarmReviews />} /> {/* ✨ กลับมาแล้ว! */}
+          {/* 🏠 Farm Public Profile */}
+          <Route path="/farm/:farmId" element={<FarmPublic />} /> 
+          <Route path="/farm/reviews/:farmId" element={<FarmReviews />} /> 
 
           {/* ❌ Catch-all Route */}
           <Route path="*" element={<NotFound />} />

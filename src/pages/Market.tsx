@@ -2,11 +2,11 @@ import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom"; 
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Search, Star, MapPin, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Search, Star, MapPin, X } from "lucide-react"; 
 import { toast } from "sonner";
-import Navbar from "@/components/Navbar"; // ✅ 1. เปลี่ยนมาใช้ Navbar ตัวกลาง
+import Navbar from "@/components/Navbar"; // ✅ ใช้ Navbar ตัวหลักของแอป
 import {
   Select,
   SelectContent,
@@ -113,12 +113,12 @@ const Market = () => {
 
   return (
     <div className="min-h-screen bg-muted/30">
-      {/* ✅ 2. แทนที่ก้อน nav เดิมด้วย Navbar ตัวกลาง */}
+      {/* ✅ Navbar ตัวกลางที่เชื่อมต่อระบบ Login/Profile แล้ว */}
       <Navbar />
 
       <div className="container mx-auto px-4 py-10">
         <div className="text-center mb-10">
-          <h2 className="text-4xl font-bold mb-3">Banana Marketplace</h2>
+          <h2 className="text-4xl font-bold mb-3 text-foreground">ค้นหาผลผลิตกล้วยจากฟาร์ม</h2>
           <p className="text-muted-foreground text-lg">เชื่อมต่อการจองผลผลิตกล้วยกับฟาร์มโดยตรงทั่วประเทศไทย</p>
         </div>
 
@@ -130,7 +130,7 @@ const Market = () => {
               placeholder="ค้นหาสินค้าหรือฟาร์ม..."
               value={search}
               onChange={(e) => setSearch(e.target.value)} 
-              className="pl-10 pr-10 h-11 shadow-sm"
+              className="pl-10 pr-10 bg-background"
             />
             {search && (
               <button 
@@ -146,11 +146,11 @@ const Market = () => {
             value={typeFilter}
             onValueChange={(v: "all" | "fruit" | "shoot") => setTypeFilter(v)}
           >
-            <SelectTrigger className="w-[160px] h-11 shadow-sm">
+            <SelectTrigger className="w-[160px] bg-background">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">สินค้าทั้งหมด</SelectItem>
+              <SelectItem value="all">ทั้งหมด</SelectItem>
               <SelectItem value="fruit">ผลกล้วย</SelectItem>
               <SelectItem value="shoot">หน่อกล้วย</SelectItem>
             </SelectContent>
@@ -160,54 +160,52 @@ const Market = () => {
         {loading ? (
           <div className="text-center py-20 text-muted-foreground">กำลังโหลดสินค้า...</div>
         ) : filteredProducts.length === 0 ? (
-          <div className="text-center py-20 text-muted-foreground">ไม่พบสินค้าที่คุณกำลังมองหา</div>
+          <div className="text-center py-20 text-muted-foreground bg-background rounded-xl border border-dashed">
+            ไม่พบสินค้าที่คุณกำลังมองหา
+          </div>
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredProducts.map((p) => (
               <Card
                 key={p.id}
-                className="group cursor-pointer hover:shadow-xl transition-all duration-300 border-none rounded-2xl overflow-hidden"
+                className="group cursor-pointer hover:shadow-md transition-all duration-300 border-none bg-background overflow-hidden"
                 onClick={() => navigate(`/market/product/${p.id}`)}
               >
+                {/* Image Section */}
                 <div className="aspect-video bg-muted flex items-center justify-center relative overflow-hidden">
                    {p.image_url ? (
                      <img 
                        src={p.image_url} 
                        alt={p.name} 
-                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" 
                      />
                    ) : (
-                     <span className="text-5xl group-hover:scale-110 transition-transform duration-300">🍌</span>
+                     <span className="text-5xl group-hover:scale-110 transition-transform">🍌</span>
                    )}
-                   <div className="absolute top-3 right-3">
-                      <span className="text-xs px-3 py-1 rounded-full bg-white/90 backdrop-blur-sm font-bold shadow-sm">
-                        {translateType(p.product_type)}
-                      </span>
-                   </div>
                 </div>
 
                 <div className="p-5">
                   <div className="flex justify-between items-start mb-2">
                     <div>
-                      <h3 className="font-bold text-xl mb-1 group-hover:text-primary transition-colors">{p.name}</h3>
+                      <h3 className="font-bold text-lg group-hover:text-primary transition-colors">{p.name}</h3>
                       <div className="flex items-center gap-1 text-sm text-muted-foreground">
                         <MapPin className="w-3 h-3" />
                         <span
-                          className="hover:text-primary transition-colors"
+                          className="hover:underline cursor-pointer"
                           onClick={(e) => {
                             e.stopPropagation();
                             navigate(`/farm/${p.farm_id}`);
                           }}
                         >
-                          {p.farm?.farm_name ?? "ฟาร์มไม่ระบุชื่อ"}
+                          {p.farm?.farm_name ?? "ไม่ระบุชื่อฟาร์ม"}
                         </span>
                       </div>
                     </div>
 
                     {p.farm?.rating != null && (
-                      <div className="flex items-center gap-1 bg-yellow-100 px-2 py-1 rounded-lg">
-                        <Star className="w-3.5 h-3.5 text-yellow-600 fill-yellow-600" />
-                        <span className="text-xs font-bold text-yellow-700">
+                      <div className="flex items-center gap-1 bg-primary/10 px-2 py-1 rounded shadow-sm">
+                        <Star className="w-4 h-4 text-primary fill-primary" />
+                        <span className="text-sm font-bold text-primary">
                           {p.farm.rating.toFixed(1)}
                         </span>
                       </div>
@@ -215,24 +213,26 @@ const Market = () => {
                   </div>
 
                   <p className="text-sm text-muted-foreground line-clamp-2 mb-4 h-10">
-                    {p.description || "ผลผลิตคุณภาพสดใหม่จากไร่"}
+                    {p.description || "ผลผลิตคุณภาพสดใหม่จากเกษตรกร"}
                   </p>
 
                   <div className="flex justify-between items-end border-t pt-4">
                     <div>
-                      <p className="text-2xl font-black text-primary">
+                      <p className="text-xl font-bold text-primary">
                         ฿{p.price_per_unit.toLocaleString()}
-                        <span className="text-sm font-normal text-muted-foreground ml-1">/{p.unit}</span>
+                        <span className="text-xs font-normal text-muted-foreground ml-1">/{p.unit}</span>
                       </p>
-                      <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mt-1">
+                      <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-tighter">
                         คงเหลือ {p.available_quantity} {p.unit}
                       </p>
                     </div>
-                    <Button size="sm" className="rounded-full px-4">ดูรายละเอียด</Button>
+                    <span className="text-[10px] px-2 py-1 rounded-full bg-muted font-bold text-muted-foreground uppercase">
+                      {translateType(p.product_type)}
+                    </span>
                   </div>
 
-                  <p className="text-[10px] text-muted-foreground mt-3 text-right">
-                    เก็บเกี่ยวเมื่อ: {new Date(p.harvest_date).toLocaleDateString('th-TH')}
+                  <p className="text-[10px] text-muted-foreground mt-3 text-right italic">
+                    วันที่เก็บเกี่ยว: {new Date(p.harvest_date).toLocaleDateString('th-TH')}
                   </p>
                 </div>
               </Card>

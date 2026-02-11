@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import {
   Upload, Sparkles, Book, Store, Utensils,
   Sprout, Droplets, BookOpen, Search, RefreshCw,
-  ArrowRight
+  ArrowRight, LogOut, User
 } from "lucide-react";
 import { useNavigate, useNavigationType } from "react-router-dom";
 import { toast } from "sonner";
@@ -19,6 +19,9 @@ const Index = () => {
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string>("");
   const [detecting, setDetecting] = useState(false);
+  
+  // ✨ เพิ่ม State สำหรับจัดการสถานะ Login
+  const [session, setSession] = useState<any>(null);
 
   // State สำหรับเก็บผลลัพธ์จาก AI และข้อมูลจาก Database
   const [result, setResult] = useState<any>(null);
@@ -27,8 +30,18 @@ const Index = () => {
   // ✨ สร้างหมุดหมาย (Ref) เพื่อบอกตำแหน่งของส่วนผลลัพธ์
   const resultRef = useRef<HTMLDivElement>(null);
 
-  // ✨ Logic: รีเฟรชต้องหาย / กดย้อนกลับต้องอยู่
+  // ✨ Logic: รีเฟรชต้องหาย / กดย้อนกลับต้องอยู่ + ตรวจสอบ Auth
   useEffect(() => {
+    // ตรวจสอบ Session เมื่อโหลดหน้า
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+
+    // ติดตามการเปลี่ยนแปลงการ Login/Logout
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
     const isReload = (
       window.performance.navigation.type === 1 ||
       performance.getEntriesByType("navigation").some((nav: any) => nav.type === "reload")
@@ -59,6 +72,8 @@ const Index = () => {
         }, 500);
       }
     }
+
+    return () => subscription.unsubscribe();
   }, [navType]);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -87,6 +102,13 @@ const Index = () => {
     toast.info("ล้างข้อมูลเรียบร้อย เริ่มสแกนใหม่ได้เลยงับ");
   };
 
+  // ✨ ฟังก์ชันออกจากระบบ
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    toast.success("ออกจากระบบเรียบร้อย");
+    navigate("/");
+  };
+
   const handleDetect = async () => {
     if (!selectedImage) {
       toast.error("กรุณาเลือกรูปภาพก่อนครับพี่");
@@ -99,18 +121,16 @@ const Index = () => {
 
     try {
       const formData = new FormData();
-      // ✅ ชื่อ 'file' ต้องตรงกับใน Python (file: UploadFile = File(...))
       formData.append('file', selectedImage); 
 
-      const backendUrl = "/api"; 
+      // ✅ แก้ไข: ดึงค่าจาก Environment Variable
+      const backendUrl = import.meta.env.VITE_API_BASE_URL || "/api"; 
 
-      // และตรงบรรทัดที่ 105 ที่ fetch:
       const response = await fetch(`${backendUrl}/detect`, { 
         method: "POST",
         body: formData,
       })
 
-      // ตรวจสอบ Error 422 หรืออื่นๆ
       if (!response.ok) {
         const errorData = await response.json();
         console.error("Server Error Detail:", errorData);
@@ -121,7 +141,6 @@ const Index = () => {
 
       if (data.success) {
         const aiKey = data.banana_key; 
-        // แปลง slug ให้ตรงกับใน Database (เช่น kluai-namwa)
         const dbSlug = `kluai-${aiKey.toLowerCase().replace(/[_\s-]/g, "")}`;
 
         const { data: dbData, error: dbError } = await supabase
@@ -138,7 +157,6 @@ const Index = () => {
           setBananaDetails(dbData);
           setResult(finalResult);
           
-          // Save to session
           sessionStorage.setItem("last_detect_result", JSON.stringify(finalResult));
           sessionStorage.setItem("last_banana_details", JSON.stringify(dbData));
           sessionStorage.setItem("last_preview_url", previewUrl);
@@ -176,15 +194,28 @@ const Index = () => {
             </h1>
           </div>
           <div className="flex items-center gap-4">
-            <Button variant="ghost" onClick={() => navigate("/knowledge")}>
+            <Button variant="ghost" className="hidden md:flex" onClick={() => navigate("/knowledge")}>
               <Book className="w-4 h-4 mr-2" />
               Knowledge
             </Button>
-            <Button variant="ghost" onClick={() => navigate("/market")}>
+            <Button variant="ghost" className="hidden md:flex" onClick={() => navigate("/market")}>
               <Store className="w-4 h-4 mr-2" />
               Marketplace
             </Button>
-            <Button onClick={() => navigate("/auth/login")}>Sign In</Button>
+
+            {/* ✨ แก้ไข: เปลี่ยนปุ่มตามสถานะ Session */}
+            {session ? (
+              <div className="flex items-center gap-2">
+                <Button variant="outline" onClick={() => navigate("/dashboard")} className="gap-2">
+                  <User className="w-4 h-4" /> Profile
+                </Button>
+                <Button variant="ghost" size="icon" onClick={handleSignOut} className="text-destructive">
+                  <LogOut className="w-4 h-4" />
+                </Button>
+              </div>
+            ) : (
+              <Button onClick={() => navigate("/auth/login")}>Sign In</Button>
+            )}
           </div>
         </div>
       </nav>
@@ -383,11 +414,9 @@ const Index = () => {
       {/* 🟢 CTA Section - High Gloss Design */}
       <section className="container mx-auto px-4 py-24">
         <div className="relative group max-w-6xl mx-auto">
-          {/* Outer Glow Effect */}
           <div className="absolute -inset-1 bg-gradient-to-r from-yellow-400 to-emerald-400 rounded-[3rem] blur opacity-25 group-hover:opacity-50 transition duration-1000"></div>
 
           <Card className="relative overflow-hidden bg-white/80 backdrop-blur-xl border border-white/40 p-12 md:p-16 text-center shadow-2xl rounded-[3rem]">
-            {/* Background Orbs */}
             <div className="absolute top-0 right-0 -mr-20 -mt-20 w-64 h-64 bg-yellow-200/50 rounded-full blur-3xl animate-pulse"></div>
             <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-64 h-64 bg-emerald-200/50 rounded-full blur-3xl" style={{ animation: 'pulse 8s infinite' }}></div>
 
@@ -408,7 +437,6 @@ const Index = () => {
               </p>
 
               <div className="flex flex-col sm:flex-row gap-5 justify-center items-center">
-                {/* Marketplace Button */}
                 <Button
                   size="lg"
                   className="group/btn relative overflow-hidden bg-slate-900 hover:bg-slate-800 text-white px-12 py-8 text-xl rounded-2xl shadow-2xl transition-all hover:scale-105 active:scale-95 w-full sm:w-auto"
@@ -422,7 +450,6 @@ const Index = () => {
                   <div className="absolute inset-0 bg-gradient-to-r from-emerald-500 to-emerald-700 opacity-0 group-hover/btn:opacity-100 transition-opacity"></div>
                 </Button>
 
-                {/* Knowledge Button - Fixed Hover Colors */}
                 <Button
                   size="lg"
                   variant="outline"
@@ -435,7 +462,6 @@ const Index = () => {
               </div>
             </div>
 
-            {/* Floating Icons */}
             <div className="absolute top-10 left-10 text-yellow-400/20 -rotate-12 animate-float hidden lg:block">
               <Sprout size={120} />
             </div>
@@ -468,4 +494,3 @@ const Index = () => {
 };
 
 export default Index;
-// Updated to Production: Feb 10, 2026

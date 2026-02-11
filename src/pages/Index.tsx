@@ -109,12 +109,6 @@ const Index = () => {
         method: "POST",
         body: formData,
       })
-      
-      const response = await fetch(`${backendUrl}/detect`, { 
-        method: "POST",
-        body: formData,
-        // ❌ สำคัญ: ห้ามใส่ Header Content-Type เอง!
-      });
 
       // ตรวจสอบ Error 422 หรืออื่นๆ
       if (!response.ok) {

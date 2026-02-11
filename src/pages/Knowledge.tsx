@@ -5,7 +5,7 @@ import { Search, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import Navbar from "@/components/Navbar"; // ✅ 1. Import Navbar เข้ามา
+import Navbar from "@/components/Navbar"; // ✅ นำเข้า Navbar ตัวกลาง
 
 interface Cultivar {
   id: string;
@@ -81,7 +81,7 @@ const Knowledge = () => {
 
   return (
     <div className="min-h-screen bg-gradient-hero">
-      {/* ✅ 2. เปลี่ยนมาใช้ Navbar ตัวกลางแทน nav เดิม */}
+      {/* ✅ เปลี่ยนมาใช้ Navbar ตัวกลาง (ซึ่งสไตล์เดียวกับ nav เดิมของแอ๋ม) */}
       <Navbar />
 
       {/* Main Content */}
@@ -118,9 +118,9 @@ const Knowledge = () => {
                 <Card
                   key={cultivar.id}
                   className="group overflow-hidden hover:shadow-2xl transition-all duration-500 cursor-pointer flex flex-col border-none rounded-3xl bg-white/50 backdrop-blur-sm"
-                  onClick={() => navigate(`/cultivar/${cultivar.slug}`)} // ✅ ปรับลิงก์ให้ตรงกับที่ใช้หน้า Index
+                  onClick={() => navigate(`/cultivar/${cultivar.slug}`)} // ✅ ลิงก์ไปหน้ารายละเอียด
                 >
-                  {/* 🛠️ ส่วนแสดงรูปภาพ: ปรับเป็น 1:1 (Square) */}
+                  {/* 🛠️ ส่วนแสดงรูปภาพ: 1:1 (Square) */}
                   <div className="relative aspect-square bg-muted flex items-center justify-center overflow-hidden">
                     {cultivar.image_url ? (
                       <img 
@@ -164,7 +164,7 @@ const Knowledge = () => {
                           .map((char, idx) => (
                             <span
                               key={idx}
-                              className="px-3 py-1 bg-yellow-100 text-yellow-700 border border-yellow-200 rounded-lg text-[10px] font-bold uppercase"
+                              className="px-3 py-1 bg-primary/5 text-primary border border-primary/10 rounded-lg text-[10px] font-bold uppercase"
                             >
                               {char.trim()}
                             </span>

@@ -29,54 +29,55 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="border-b border-yellow-100 bg-white/90 backdrop-blur-md sticky top-0 z-50">
+    <nav className="border-b border-slate-100 bg-white/95 backdrop-blur-md sticky top-0 z-50 shadow-sm">
       <div className="container mx-auto px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <h1
-            className="text-2xl font-black tracking-tight bg-gradient-to-r from-yellow-500 to-yellow-700 bg-clip-text text-transparent cursor-pointer"
+            className="text-2xl font-black tracking-tight bg-gradient-to-r from-yellow-500 to-yellow-600 bg-clip-text text-transparent cursor-pointer"
             onClick={() => navigate("/")}
           >
             Banana Expert
           </h1>
         </div>
 
-        <div className="flex items-center gap-2 md:gap-3">
-          {/* ✨ NavLink: ใช้สีเหลืองเข้ม (Yellow-600) เมื่อ Active เพื่อให้อ่านออกชัดเจน */}
+        <div className="flex items-center gap-1 md:gap-2">
+          {/* ✨ Knowledge: สีดำเดิมๆ ตามใจแอ๋ม เมาส์จ่อแล้วเข้มขึ้น ไม่หายแน่นอน */}
           <NavLink 
             to="/knowledge" 
-            className="hidden md:flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-slate-500 transition-all hover:text-yellow-600 hover:bg-yellow-50"
-            activeClassName="bg-yellow-100 text-yellow-700 shadow-sm border border-yellow-200" 
+            className="hidden md:flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-slate-900 transition-all hover:bg-slate-100"
+            activeClassName="bg-yellow-400 text-black shadow-sm" 
           >
-            <Book className="w-4 h-4" />
+            <Book className="w-4 h-4 text-yellow-600" />
             Knowledge
           </NavLink>
 
+          {/* ✨ Marketplace: สีดำชัดเจน เมาส์จ่อแล้วมีมิติ */}
           <NavLink 
             to="/market" 
-            className="hidden md:flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-slate-500 transition-all hover:text-yellow-600 hover:bg-yellow-50"
-            activeClassName="bg-yellow-100 text-yellow-700 shadow-sm border border-yellow-200"
+            className="hidden md:flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-slate-900 transition-all hover:bg-slate-100"
+            activeClassName="bg-yellow-400 text-black shadow-sm"
           >
-            <Store className="w-4 h-4" />
+            <Store className="w-4 h-4 text-yellow-600" />
             Marketplace
           </NavLink>
 
           {/* ส่วนเช็คสถานะ Login */}
           {session ? (
-            <div className="flex items-center gap-2 border-l border-yellow-100 pl-4 ml-2">
-              {/* ✨ ปุ่ม Profile: ใช้สีเหลืองทอง ตัดกับตัวหนังสือเข้ม อ่านง่ายชัวร์ */}
+            <div className="flex items-center gap-2 border-l border-slate-200 pl-4 ml-2">
+              {/* ✨ ปุ่ม Profile: แก้ให้ขอบชัด ข้อความดำ เมาส์จ่อแล้วไม่หายสีขาวชัวร์ */}
               <Button 
                 variant="outline" 
                 onClick={() => navigate("/dashboard")} 
-                className="gap-2 rounded-xl border-yellow-200 bg-yellow-50 text-yellow-800 hover:bg-yellow-100 font-bold shadow-sm"
+                className="gap-2 rounded-xl border-slate-300 bg-white text-slate-900 hover:bg-slate-900 hover:text-white font-bold shadow-sm transition-all"
               >
-                <User className="w-4 h-4" /> Profile
+                <User className="w-4 h-4 text-yellow-500" /> Profile
               </Button>
               
               <Button 
                 variant="ghost" 
                 size="icon" 
                 onClick={handleSignOut} 
-                className="rounded-xl text-slate-400 hover:text-red-500 hover:bg-red-50"
+                className="rounded-xl text-slate-500 hover:text-red-600 hover:bg-red-50"
               >
                 <LogOut className="w-4 h-4" />
               </Button>
@@ -84,7 +85,7 @@ const Navbar = () => {
           ) : (
             <Button 
               onClick={() => navigate("/auth/login")}
-              className="bg-yellow-400 hover:bg-yellow-500 text-yellow-950 font-black rounded-xl px-6 shadow-md transition-all active:scale-95"
+              className="bg-yellow-400 hover:bg-black hover:text-white text-black font-black rounded-xl px-6 shadow-md transition-all active:scale-95"
             >
               Sign In
             </Button>

@@ -84,7 +84,7 @@ const Index = () => {
     setDetecting(true);
     try {
       const formData = new FormData();
-      formData.append('file', selectedImage);
+      formData.append('image', selectedImage);
       const backendUrl = import.meta.env.VITE_API_BASE_URL || "/api";
       const response = await fetch(`${backendUrl}/detect`, { method: "POST", body: formData });
       const data = await response.json();

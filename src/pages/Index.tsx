@@ -102,7 +102,13 @@ const Index = () => {
       // ✅ ชื่อ 'file' ต้องตรงกับใน Python (file: UploadFile = File(...))
       formData.append('file', selectedImage); 
 
-      const backendUrl = "https://banana-deploy.onrender.com";
+      const backendUrl = "/api"; 
+
+      // และตรงบรรทัดที่ 105 ที่ fetch:
+      const response = await fetch(`${backendUrl}/detect`, { 
+        method: "POST",
+        body: formData,
+      })
       
       const response = await fetch(`${backendUrl}/detect`, { 
         method: "POST",

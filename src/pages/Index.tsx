@@ -10,7 +10,7 @@ import { useNavigate, useNavigationType } from "react-router-dom";
 import { toast } from "sonner";
 import heroImage from "@/assets/hero-bananas.jpg";
 import { supabase } from "@/integrations/supabase/client";
-import Navbar from "@/components/Navbar"; // ✅ 1. Import Navbar ตัวใหม่เข้ามา
+import Navbar from "@/components/Navbar"; // ✅ นำเข้า Navbar ตัวใหม่
 
 const Index = () => {
   const navigate = useNavigate();
@@ -20,14 +20,11 @@ const Index = () => {
   const [previewUrl, setPreviewUrl] = useState<string>("");
   const [detecting, setDetecting] = useState(false);
   
-  // 💡 หมายเหตุ: ไม่ต้องมี State session หรือฟังก์ชัน handleSignOut แล้ว เพราะอยู่ใน <Navbar />
-
   const [result, setResult] = useState<any>(null);
   const [bananaDetails, setBananaDetails] = useState<any>(null);
   const resultRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // 💡 เหลือไว้แค่ Logic การจัดการ Refresh/Navigation
     const isReload = (
       window.performance.navigation.type === 1 ||
       performance.getEntriesByType("navigation").some((nav: any) => nav.type === "reload")
@@ -59,7 +56,6 @@ const Index = () => {
     }
   }, [navType]);
 
-  // --- ฟังก์ชัน handleImageUpload, resetDetection, handleDetect (ใช้ของเดิมของพี่ได้เลย) ---
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -117,12 +113,11 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gradient-hero">
-      {/* ✅ 2. วาง Navbar ตัวใหม่แทนที่ก้อนเดิมทั้งก้อน */}
+      {/* ✅ 1. Navbar ตัวใหม่มาแล้ว */}
       <Navbar />
 
       {/* 🟢 Hero Header Section */}
       <section className="relative overflow-hidden">
-        {/* ... (โค้ดเดิม) ... */}
         <div className="absolute inset-0 opacity-10">
           <img src={heroImage} alt="Fresh bananas background" className="w-full h-full object-cover" />
         </div>

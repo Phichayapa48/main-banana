@@ -360,11 +360,6 @@ const UserOrders = () => {
   }
 };
 
-
-
-
-  /* ---------- SUBMIT REVIEW ---------- */
-
   const submitReview = async () => {
   if (!selectedOrder) return;
 

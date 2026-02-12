@@ -19,7 +19,6 @@ interface FarmProfile {
   farm_name: string;
   farm_location: string;
   rating: number | null;
-  // ใช้ profiles เป็น Array หรือ Object ตามที่ Supabase คืนค่ามา
   profiles?: any; 
 }
 
@@ -85,7 +84,7 @@ const Market = () => {
   const loadProducts = async () => {
     try {
       setLoading(true);
-      // Query แบบระบุ Column ชัดเจนเพื่อป้องกัน Error
+      // ✨ แก้ไขจุดนี้: ใช้ user_id ในการเชื่อม profiles ตามโครงสร้าง 1 เมล 2 Role
       const { data, error } = await supabase
         .from("products")
         .select(`
@@ -103,21 +102,32 @@ const Market = () => {
             farm_name,
             farm_location,
             rating,
-            profiles (
+            profiles: user_id (
               last_seen
             )
           )
         `)
         .eq("is_active", true);
 
-      if (error) {
-        console.error("Supabase Error:", error);
-        throw error;
-      }
+      if (error) throw error;
       setProducts(data as any ?? []);
     } catch (err) {
-      console.error("Load Products Fail:", err);
-      toast.error("โหลดสินค้าไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");
+      console.error("Load Fail, trying Fallback:", err);
+      // 🛡️ กันพัง: ถ้าดึงข้อมูลออนไลน์ไม่ได้ ให้ดึงแค่ข้อมูลสินค้ามาโชว์ก่อน
+      const { data: fallbackData } = await supabase
+        .from("products")
+        .select(`
+          *,
+          farm: farm_profiles (
+            farm_name,
+            farm_location,
+            rating
+          )
+        `)
+        .eq("is_active", true);
+      
+      if (fallbackData) setProducts(fallbackData as any);
+      toast.error("แสดงสินค้าแบบออฟไลน์ (ดึงข้อมูลออนไลน์ไม่ได้)");
     } finally {
       setLoading(false);
     }
@@ -141,7 +151,6 @@ const Market = () => {
           <p className="text-muted-foreground">เชื่อมต่อการจองผลผลิตกล้วยกับฟาร์มโดยตรงทั่วประเทศไทย</p>
         </div>
 
-        {/* Search & Filters */}
         <div className="max-w-4xl mx-auto mb-8 flex flex-col sm:flex-row gap-4">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
@@ -183,7 +192,6 @@ const Market = () => {
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredProducts.map((p) => {
-              // ดึงค่า last_seen แบบปลอดภัย (รองรับทั้ง Object และ Array)
               const lastSeenVal = Array.isArray(p.farm?.profiles) 
                 ? p.farm?.profiles[0]?.last_seen 
                 : p.farm?.profiles?.last_seen;
@@ -241,7 +249,6 @@ const Market = () => {
                       {p.description || "ผลผลิตคุณภาพสดใหม่จากเกษตรกรไทย"}
                     </p>
 
-                    {/* ✨ Online Status Indicator */}
                     <div className="flex items-center gap-1.5 mb-4">
                       <div className={`w-2 h-2 rounded-full ${isOnline ? "bg-green-500 animate-pulse" : "bg-gray-300"}`} />
                       <span className="text-[11px] font-medium text-slate-500">

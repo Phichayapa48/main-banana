@@ -141,8 +141,8 @@ const Market = () => {
     const matchName = p.name?.toLowerCase().includes(keyword);
     const matchFarm = p.farm?.farm_name?.toLowerCase().includes(keyword) ?? false;
     const matchType = typeFilter === "all" || p.product_type === typeFilter;
-    const hasStock = p.available_quantity > 0;
-    return (matchName || matchFarm) && matchType && hasStock;
+    const hasStock = p.available_quantity > 0; // ✨ เพิ่มเงื่อนไขเช็คสต็อก
+    return (matchName || matchFarm) && matchType && hasStock; // ✨ กรองออกถ้าไม่มีของ
   });
 
   return (

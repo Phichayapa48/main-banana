@@ -123,12 +123,15 @@ const Dashboard = () => {
 
   const handleUpgradeToFarm = async () => {
     try {
+      // 1. เพิ่ม Role ให้ User
       await supabase.from("user_roles").insert({
         user_id: user.id,
         role: "farm",
       });
 
+      // ✨ จุดที่แก้ไข: สร้างฟาร์มโดยให้ ID ฟาร์มกับ User_id เป็นเลขเดียวกัน
       await supabase.from("farm_profiles").insert({
+        id: user.id, // ให้ ID ฟาร์มเป็นเลขเดียวกับคนเล่น
         user_id: user.id,
         farm_name: "ฟาร์มของฉัน",
         farm_location: "ประเทศไทย",
@@ -259,7 +262,6 @@ const Dashboard = () => {
                     </p>
                   </div>
 
-                  {/* ✨ จุดที่แสดงผลสถานะภาษาไทย */}
                   <span
                     className={`px-2 py-1 text-xs rounded ${statusStyle[o.status]}`}
                   >

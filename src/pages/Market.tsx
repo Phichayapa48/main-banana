@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom"; 
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, Star, MapPin, X } from "lucide-react"; 
 import { toast } from "sonner";
@@ -20,10 +19,8 @@ interface FarmProfile {
   farm_name: string;
   farm_location: string;
   rating: number | null;
-  // เพิ่มส่วนนี้เพื่อดึงข้อมูลเวลาออนไลน์
-  profiles: {
-    last_seen: string | null;
-  } | null;
+  // ใช้ profiles เป็น Array หรือ Object ตามที่ Supabase คืนค่ามา
+  profiles?: any; 
 }
 
 interface Product {
@@ -41,8 +38,7 @@ interface Product {
 }
 
 /* ---------- Helper Function ---------- */
-// ฟังก์ชันคำนวณเวลาออนไลน์ภาษาไทย
-const getTimeAgo = (dateString: string | null) => {
+const getTimeAgo = (dateString: string | null | undefined) => {
   if (!dateString) return "ไม่ระบุสถานะ";
   const now = new Date();
   const lastSeen = new Date(dateString);
@@ -72,27 +68,13 @@ const Market = () => {
     const types: Record<string, string> = {
       fruit: "ผล",
       shoot: "หน่อ",
-      "ผล": "ผล",
-      "หน่อ": "หน่อ"
     };
     return types[type] || type;
   };
 
   useEffect(() => {
     loadProducts();
-    // เสริม: อัปเดตเวลาออนไลน์ของเราเองด้วยเวลาเข้าหน้านี้
-    updateMyLastSeen();
   }, []);
-
-  const updateMyLastSeen = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session?.user) {
-      await supabase
-        .from('profiles')
-        .update({ last_seen: new Date().toISOString() })
-        .eq('id', session.user.id);
-    }
-  };
 
   useEffect(() => {
     if (initialSearch) {
@@ -103,6 +85,7 @@ const Market = () => {
   const loadProducts = async () => {
     try {
       setLoading(true);
+      // Query แบบระบุ Column ชัดเจนเพื่อป้องกัน Error
       const { data, error } = await supabase
         .from("products")
         .select(`
@@ -127,11 +110,14 @@ const Market = () => {
         `)
         .eq("is_active", true);
 
-      if (error) throw error;
-      setProducts(data ?? []);
+      if (error) {
+        console.error("Supabase Error:", error);
+        throw error;
+      }
+      setProducts(data as any ?? []);
     } catch (err) {
-      console.error(err);
-      toast.error("โหลดสินค้าไม่สำเร็จ");
+      console.error("Load Products Fail:", err);
+      toast.error("โหลดสินค้าไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");
     } finally {
       setLoading(false);
     }
@@ -139,8 +125,8 @@ const Market = () => {
 
   const filteredProducts = products.filter((p) => {
     const keyword = search.toLowerCase();
-    const matchName = p.name.toLowerCase().includes(keyword);
-    const matchFarm = p.farm?.farm_name.toLowerCase().includes(keyword) ?? false;
+    const matchName = p.name?.toLowerCase().includes(keyword);
+    const matchFarm = p.farm?.farm_name?.toLowerCase().includes(keyword) ?? false;
     const matchType = typeFilter === "all" || p.product_type === typeFilter;
     return (matchName || matchFarm) && matchType;
   });
@@ -155,7 +141,7 @@ const Market = () => {
           <p className="text-muted-foreground">เชื่อมต่อการจองผลผลิตกล้วยกับฟาร์มโดยตรงทั่วประเทศไทย</p>
         </div>
 
-        {/* Filters */}
+        {/* Search & Filters */}
         <div className="max-w-4xl mx-auto mb-8 flex flex-col sm:flex-row gap-4">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
@@ -168,7 +154,7 @@ const Market = () => {
             {search && (
               <button 
                 onClick={() => setSearch("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -197,9 +183,13 @@ const Market = () => {
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredProducts.map((p) => {
-              // เช็คว่าออนไลน์อยู่ไหม (ไม่เกิน 5 นาที)
-              const isOnline = p.farm?.profiles?.last_seen && 
-                (new Date().getTime() - new Date(p.farm.profiles.last_seen).getTime()) < 300000;
+              // ดึงค่า last_seen แบบปลอดภัย (รองรับทั้ง Object และ Array)
+              const lastSeenVal = Array.isArray(p.farm?.profiles) 
+                ? p.farm?.profiles[0]?.last_seen 
+                : p.farm?.profiles?.last_seen;
+
+              const isOnline = lastSeenVal && 
+                (new Date().getTime() - new Date(lastSeenVal).getTime()) < 300000;
 
               return (
                 <Card
@@ -251,11 +241,11 @@ const Market = () => {
                       {p.description || "ผลผลิตคุณภาพสดใหม่จากเกษตรกรไทย"}
                     </p>
 
-                    {/* ✨ ส่วนสถานะออนไลน์ที่เพิ่มเข้ามาใหม่ */}
+                    {/* ✨ Online Status Indicator */}
                     <div className="flex items-center gap-1.5 mb-4">
                       <div className={`w-2 h-2 rounded-full ${isOnline ? "bg-green-500 animate-pulse" : "bg-gray-300"}`} />
                       <span className="text-[11px] font-medium text-slate-500">
-                        {getTimeAgo(p.farm?.profiles?.last_seen || null)}
+                        {getTimeAgo(lastSeenVal)}
                       </span>
                     </div>
 

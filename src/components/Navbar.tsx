@@ -11,22 +11,6 @@ const Navbar = () => {
   const location = useLocation(); 
   const [session, setSession] = useState<any>(null);
 
-  useEffect(() => {
-    // ดึง Session ครั้งแรก
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      if (session?.user) updateLastSeen(session.user.id);
-    });
-
-    // ตรวจสอบการเปลี่ยนแปลง Login/Logout
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      if (session?.user) updateLastSeen(session.user.id);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
   // ✨ ฟังก์ชันอัปเดตสถานะออนไลน์ (last_seen)
   const updateLastSeen = async (userId: string) => {
     try {
@@ -39,16 +23,43 @@ const Navbar = () => {
     }
   };
 
-  // ✨ ตั้งเวลาอัปเดตทุก 4 นาที (เผื่อไว้ให้ทัน 5 นาทีในหน้า Market)
   useEffect(() => {
-    if (session?.user) {
-      const interval = setInterval(() => {
+    // 1. ดึง Session ครั้งแรก และอัปเดตสถานะทันทีถ้า Login อยู่
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      if (session?.user) {
         updateLastSeen(session.user.id);
-      }, 4 * 60 * 1000); // 4 minutes
-      
-      return () => clearInterval(interval);
+      }
+    });
+
+    // 2. ตรวจสอบการเปลี่ยนแปลงสถานะ Login/Logout
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setSession(session);
+      if (session?.user) {
+        updateLastSeen(session.user.id);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // ✨ ตั้งเวลาอัปเดตทุก 4 นาที เพื่อรักษาสถานะ "ออนไลน์ตอนนี้" ในหน้า Market
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+
+    if (session?.user) {
+      // อัปเดตทันทีเมื่อเปลี่ยนหน้า (เพราะ Navbar โหลดใหม่หรือ Re-render)
+      updateLastSeen(session.user.id);
+
+      interval = setInterval(() => {
+        updateLastSeen(session.user.id);
+      }, 4 * 60 * 1000); // ทุก 4 นาที
     }
-  }, [session]);
+    
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [session, location.pathname]); // ✨ อัปเดตทุกครั้งที่เปลี่ยนหน้า (location.pathname)
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -61,7 +72,6 @@ const Navbar = () => {
       <div className="container mx-auto px-4 py-3 flex items-center justify-between">
         
         <div className="flex items-center gap-2">
-          {/* ✨ ปุ่มย้อนกลับ: จ่อแล้วส้มขาว */}
           {location.pathname !== "/" && (
             <Button 
               variant="ghost" 
@@ -82,7 +92,6 @@ const Navbar = () => {
         </div>
 
         <div className="flex items-center gap-1 md:gap-2">
-          {/* Knowledge: จ่อแล้วส้มขาว */}
           <NavLink 
             to="/knowledge" 
             className="hidden md:flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-slate-900 transition-all hover:bg-orange-600 hover:text-white"
@@ -92,7 +101,6 @@ const Navbar = () => {
             Knowledge
           </NavLink>
 
-          {/* Marketplace: จ่อแล้วส้มขาว */}
           <NavLink 
             to="/market" 
             className="hidden md:flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-slate-900 transition-all hover:bg-orange-600 hover:text-white"

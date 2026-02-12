@@ -192,7 +192,11 @@ const Market = () => {
         {loading ? (
           <div className="text-center py-20 text-muted-foreground">กำลังโหลดสินค้า...</div>
         ) : filteredProducts.length === 0 ? (
-          <div className="text-center py-20 text-muted-foreground">ไม่พบสินค้าที่คุณต้องการ</div>
+          <div className="text-center py-20">
+            <span className="text-5xl mb-4 block">📦</span>
+            <p className="text-muted-foreground text-lg">ขณะนี้สินค้าหมดชั่วคราว หรือไม่พบรายการที่ค้นหา</p>
+            <p className="text-sm text-slate-400">ลองแวะมาดูใหม่ภายหลัง หรือเปลี่ยนคำค้นหานะจ๊ะ</p>
+          </div>
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredProducts.map((p) => {

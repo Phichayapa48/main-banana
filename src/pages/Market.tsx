@@ -141,7 +141,8 @@ const Market = () => {
     const matchName = p.name?.toLowerCase().includes(keyword);
     const matchFarm = p.farm?.farm_name?.toLowerCase().includes(keyword) ?? false;
     const matchType = typeFilter === "all" || p.product_type === typeFilter;
-    return (matchName || matchFarm) && matchType;
+    const hasStock = p.available_quantity > 0;
+    return (matchName || matchFarm) && matchType && hasStock;
   });
 
   return (

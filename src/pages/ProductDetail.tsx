@@ -60,6 +60,10 @@ const ProductDetail = () => {
   const [newAddress, setNewAddress] = useState("");
 
   const [submitting, setSubmitting] = useState(false);
+  const [receiverName, setReceiverName] = useState("");
+  const [receiverPhone, setReceiverPhone] = useState("");
+
+
 
   /* ---------- Load Product ---------- */
 
@@ -149,58 +153,64 @@ const ProductDetail = () => {
   };
 
   const handleReserve = async () => {
-    if (!product) return;
+  if (!product) return;
 
-    if (quantity > product.available_quantity) {
-      toast.error("จำนวนที่จองเกินกว่าสินค้าที่มี");
+  if (quantity > product.available_quantity) {
+    toast.error("จำนวนที่จองเกินกว่าสินค้าที่มี");
+    return;
+  }
+
+  if (addressType === "new") {
+    if (!receiverName.trim()) {
+      toast.error("กรุณากรอกชื่อผู้รับ");
       return;
     }
 
-    let address = "";
-    if (addressType === "saved") {
-      if (!savedAddress) {
-        toast.error("ยังไม่มีที่อยู่");
-        return;
-      }
-      address = savedAddress;
-    } else {
-      if (!newAddress.trim()) {
-        toast.error("กรุณากรอกที่อยู่ใหม่");
-        return;
-      }
-      address = newAddress.trim();
-    }
-
-    setSubmitting(true);
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      toast.error("กรุณาเข้าสู่ระบบ");
-      setSubmitting(false);
+    if (!receiverPhone.trim()) {
+      toast.error("กรุณากรอกเบอร์โทร");
       return;
     }
 
-    // ✅ แก้ไข: เปลี่ยนจาก "reserve_product" เป็น "reserve_v3"
-    const { error } = await supabase.rpc("reserve_v3", {
-      p_product_id: product.id,
-      p_user_id: user.id,
-      p_quantity: quantity,
-      p_note: `${note || ""}\n\nที่อยู่จัดส่ง:\n${address}`,
-    });
-
-    if (error) {
-      toast.error(error.message || "จองสินค้าไม่สำเร็จ");
-    } else {
-      toast.success("จองสินค้าเรียบร้อย");
-      setOpenReserve(false);
-      loadProduct(product.id); // refresh stock
+    if (!newAddress.trim()) {
+      toast.error("กรุณากรอกที่อยู่ใหม่");
+      return;
     }
+  }
 
+  setSubmitting(true);
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    toast.error("กรุณาเข้าสู่ระบบ");
     setSubmitting(false);
-  };
+    return;
+  }
+
+  const { error } = await supabase.rpc("reserve_v4", {
+    p_product_id: product.id,
+    p_user_id: user.id,
+    p_quantity: quantity,
+    p_note: note || "",
+    p_use_profile: addressType === "saved",
+    p_receiver_name: addressType === "new" ? receiverName : null,
+    p_receiver_phone: addressType === "new" ? receiverPhone : null,
+    p_delivery_address: addressType === "new" ? newAddress : null
+  });
+
+  if (error) {
+    toast.error(error.message || "จองสินค้าไม่สำเร็จ");
+  } else {
+    toast.success("จองสินค้าเรียบร้อย");
+    setOpenReserve(false);
+    loadProduct(product.id);
+  }
+
+  setSubmitting(false);
+};
+
 
   /* ---------- UI ---------- */
 
@@ -364,13 +374,28 @@ const ProductDetail = () => {
               </div>
             </RadioGroup>
 
-            {addressType === "new" && (
-              <Textarea
-                placeholder="กรอกที่อยู่ใหม่"
-                value={newAddress}
-                onChange={(e) => setNewAddress(e.target.value)}
-              />
+              {addressType === "new" && (
+              <div className="space-y-3">
+                <Input
+                  placeholder="ชื่อผู้รับ"
+                  value={receiverName}
+                  onChange={(e) => setReceiverName(e.target.value)}
+                />
+
+                <Input
+                  placeholder="เบอร์โทร"
+                  value={receiverPhone}
+                  onChange={(e) => setReceiverPhone(e.target.value)}
+                />
+
+                <Textarea
+                  placeholder="ที่อยู่จัดส่ง"
+                  value={newAddress}
+                  onChange={(e) => setNewAddress(e.target.value)}
+                />
+              </div>
             )}
+
           </Card>
 
           <Textarea
